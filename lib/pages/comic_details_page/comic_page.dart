@@ -1031,11 +1031,12 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
         const SizedBox(height: 12),
         ComicDescription(
           title: comic.title,
-          subtitle:
-              comic.findAuthor() ?? comic.subTitle ?? comic.uploader ?? '',
+          subtitle: comic.findAuthor() ?? comic.subTitle ?? '',
           description: comic.description ?? '',
           badge: ComicSource.find(comic.sourceKey)?.name,
           tags: comic.plainTags,
+          uploader: comic.uploader,
+          showUploader: true,
           maxLines: isWide ? 5 : 4,
           enableTranslate:
               ComicSource.find(comic.sourceKey)?.enableTagsTranslate ?? false,

@@ -10,6 +10,8 @@ class ComicDescription extends StatelessWidget {
     this.badge,
     this.maxLines = 2,
     this.tags,
+    this.uploader,
+    this.showUploader = false,
     this.rating,
     this.updateText,
     this.statusText,
@@ -28,6 +30,10 @@ class ComicDescription extends StatelessWidget {
   final String description;
   final String? badge;
   final List<String>? tags;
+  final String? uploader;
+
+  /// Whether to render a dedicated clickable Uploader row (detail page only).
+  final bool showUploader;
   final int maxLines;
   final bool enableTranslate;
   final double? rating;
@@ -59,6 +65,9 @@ class ComicDescription extends StatelessWidget {
         ? null
         : authorItems.map((e) => e.label).join(", ");
     final languageItems = _languageItems();
+    final uploaderItems = showUploader
+        ? _uploaderItems()
+        : const <_DescriptionTag>[];
     final tagItems = _tagItems();
     final tagText = _tagText(tagItems);
     final status = _clean(statusText) ?? _statusText();
@@ -112,6 +121,30 @@ class ComicDescription extends StatelessWidget {
           _tagText(languageItems)!,
           Colors.indigo,
         ),
+      // Uploader gets its own row so a reposter's other uploads can be found
+      // with one tap; the value stays filtered out of the generic tag row.
+      if (uploaderItems.isNotEmpty && onTapTag != null)
+        _actionRow(
+          context,
+          "Uploader".tl,
+          uploaderItems
+              .map(
+                (item) => _InfoAction(
+                  text: item.label,
+                  onTap: () =>
+                      onTapTag!(item.value, item.namespace ?? 'uploader'),
+                ),
+              )
+              .toList(),
+          Colors.orange,
+        )
+      else if (uploaderItems.isNotEmpty)
+        _infoRow(
+          context,
+          "Uploader".tl,
+          _tagText(uploaderItems)!,
+          Colors.orange,
+        ),
       if (update != null) _infoRow(context, "Update".tl, update, Colors.cyan),
       if (source != null) _infoRow(context, "Source".tl, source, Colors.cyan),
       if (tagItems.isNotEmpty && onTapTag != null)
@@ -150,7 +183,9 @@ class ComicDescription extends StatelessWidget {
           constraints.maxHeight,
           rating != null,
           totalRows: rows.length,
-          extraRows: languageItems.isEmpty ? 0 : 1,
+          extraRows:
+              (languageItems.isEmpty ? 0 : 1) +
+              (uploaderItems.isEmpty ? 0 : 1),
         );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,6 +392,22 @@ class ComicDescription extends StatelessWidget {
     return _tagItemsWithNamespace(_languageNamespaces);
   }
 
+  /// Uploader tags, shown in a row of their own so tapping the name searches
+  /// that uploader's other uploads.
+  List<_DescriptionTag> _uploaderItems() {
+    final fromTags = _tagItemsWithNamespace(_uploaderNamespaces);
+    if (fromTags.isNotEmpty) {
+      return fromTags;
+    }
+    final value = _clean(uploader);
+    if (value == null) {
+      return const [];
+    }
+    return [
+      _DescriptionTag(namespace: 'uploader', value: value, label: value),
+    ];
+  }
+
   /// Content tags, minus language ones — those get their own row.
   List<_DescriptionTag> _tagItems() {
     final rawTags = tags
@@ -543,6 +594,12 @@ class ComicDescription extends StatelessWidget {
     'lang',
     '語言',
     '语言',
+  };
+
+  static const _uploaderNamespaces = {
+    'uploader',
+    '上傳者',
+    '上传者',
   };
 
   // 'language' is deliberately absent here: nothing renders metadata rows for
